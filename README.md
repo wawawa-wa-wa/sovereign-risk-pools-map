@@ -9,7 +9,8 @@ It includes:
 The purpose is to provide a simple reference tool for people interested in disaster risk financing and public-private insurance systems.
 
 Live map:  
-[https://78887dec-af0b-4f55-97a2-7e7561694ae2-00-1bx1k6t95khzy.picard.replit.dev](https://78887dec-af0b-4f55-97a2-7e7561694ae2-00-1bx1k6t95khzy.picard.replit.dev)
+
+[https://wawawa-wa-wa.github.io/sovereign-risk-pools-map](https://wawawa-wa-wa.github.io/sovereign-risk-pools-map)
 
 
 Topics: sovereign risk pools, disaster insurance, agricultural insurance, public-private reinsurance, ARC, CCRIF, SEADRIF, parametric insurance
