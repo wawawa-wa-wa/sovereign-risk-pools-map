@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Sovereign Risk Pools</title>
+    
+    <!-- Leaflet CSS from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header styles */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Main content container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Map container */
+        .map-container {
+            margin-bottom: 3rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            background: white;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+
+        /* Information section */
+        .info-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .info-section h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            font-weight: 400;
+        }
+
+        .info-section p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        /* Risk pools grid */
+        .risk-pools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .risk-pool-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .risk-pool-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
+        .risk-pool-card h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .risk-pool-card .location {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .risk-pool-card .detail {
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .risk-pool-card .detail strong {
+            color: #333;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: 2rem;
+        }
+
+        /* Custom popup styles */
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .leaflet-popup-content {
+            margin: 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .popup-title {
+            color: #667eea;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .popup-detail {
+            margin-bottom: 0.3rem;
+            color: #555;
+        }
+
+        .popup-detail strong {
+            color: #333;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .info-section {
+                padding: 1.5rem;
+            }
+
+            .risk-pool-card {
+                padding: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 1.5rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            #map {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <h1>Global Sovereign Risk Pools</h1>
+        <p>Interactive map of disaster risk sharing mechanisms worldwide</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Map Section -->
+        <section class="map-container">
+            <div id="map"></div>
+        </section>
+
+        <!-- Information Section -->
+        <section class="info-section">
+            <h2>What are Sovereign Risk Pools?</h2>
+            <p>
+                Sovereign risk pools are innovative financial mechanisms that enable countries to share the costs of natural disasters and climate-related risks. These pools allow member nations to collectively purchase insurance coverage, reducing individual countries' financial burden when disasters strike and providing faster access to emergency funds for recovery efforts.
+            </p>
+            <p>
+                By pooling resources and diversifying risks across different geographic regions and disaster types, these mechanisms offer more affordable and comprehensive coverage than individual country insurance policies. The map above shows 25 major risk pools operating worldwide, including both property/disaster risk pools (shown as circles) and agricultural risk pools (shown as diamonds), covering everything from regional facilities serving multiple countries to national schemes providing specialized coverage.
+            </p>
+
+            <!-- Risk Pools Grid -->
+            <div class="risk-pools-grid">
+                <!-- Disaster Risk Pools -->
+                <div class="risk-pool-card">
+                    <h3>ARC (African Risk Capacity)</h3>
+                    <div class="location">Africa - Nairobi, Kenya</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Drought, floods, cyclones</div>
+                    <div class="detail"><strong>Member Countries:</strong> 40+ African Union member states</div>
+                    <div class="detail"><strong>Example Payout:</strong> $26.3 million to Malawi (2016 drought)</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>CCRIF (Caribbean Catastrophe Risk Insurance Facility)</h3>
+                    <div class="location">Caribbean - Cayman Islands</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Hurricanes, earthquakes, excess rainfall</div>
+                    <div class="detail"><strong>Member Countries:</strong> 23 Caribbean and Central American countries</div>
+                    <div class="detail"><strong>Example Payout:</strong> $15.6 million to Dominica (Hurricane Maria 2017)</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>PCRIC (Pacific Catastrophe Risk Insurance Company)</h3>
+                    <div class="location">Pacific - Suva, Fiji</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquakes, tsunamis, cyclones</div>
+                    <div class="detail"><strong>Member Countries:</strong> 15+ Pacific Island nations</div>
+                    <div class="detail"><strong>Example Payout:</strong> $3.5 million to Tonga (Cyclone Gita 2018)</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>PAID (Pool of Insurance Against Natural Disasters in Dwellings)</h3>
+                    <div class="location">Romania - Bucharest</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquakes, floods, landslides</div>
+                    <div class="detail"><strong>Member Countries:</strong> Romanian homeowners (mandatory coverage)</div>
+                    <div class="detail"><strong>Example Payout:</strong> Covers residential properties nationwide</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>TCIP (Turkish Catastrophe Insurance Pool)</h3>
+                    <div class="location">Turkey - Ankara</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquakes</div>
+                    <div class="detail"><strong>Member Countries:</strong> Turkish residential buildings</div>
+                    <div class="detail"><strong>Example Payout:</strong> Payouts after major earthquakes</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>CCS (Consorcio de Compensacion de Seguros)</h3>
+                    <div class="location">Spain - Madrid</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Natural disasters, extraordinary risks</div>
+                    <div class="detail"><strong>Member Countries:</strong> Spanish insurance market</div>
+                    <div class="detail"><strong>Example Payout:</strong> Comprehensive disaster coverage</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>CCR (Caisse Centrale de Reassurance)</h3>
+                    <div class="location">France - Paris</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Natural disasters via nat cat scheme</div>
+                    <div class="detail"><strong>Member Countries:</strong> French insurance market</div>
+                    <div class="detail"><strong>Example Payout:</strong> State-guaranteed reinsurance</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>SEADRIF (Southeast Asia Disaster Risk Insurance Facility)</h3>
+                    <div class="location">Southeast Asia - Singapore</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Floods, natural disasters</div>
+                    <div class="detail"><strong>Member Countries:</strong> Southeast Asian countries (Laos, Myanmar)</div>
+                    <div class="detail"><strong>Example Payout:</strong> World Bank-backed facility</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>NAT (Norway Natural Perils Pool)</h3>
+                    <div class="location">Norway - Oslo</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Floods, natural disasters</div>
+                    <div class="detail"><strong>Member Countries:</strong> All property insurers in Norway (mandatory pool)</div>
+                    <div class="detail"><strong>Example Payout:</strong> Funded via property premiums; state-backed excess coverage</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>NTI (Iceland Natural Catastrophe Insurance)</h3>
+                    <div class="location">Iceland - Reykjavik</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Floods, natural disasters</div>
+                    <div class="detail"><strong>Member Countries:</strong> All residential property owners (compulsory national scheme)</div>
+                    <div class="detail"><strong>Example Payout:</strong> Funded via property premiums; state-backed excess coverage</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>Toka Tu Ake (New Zealand Natural Hazards Commission)</h3>
+                    <div class="location">New Zealand - Wellington</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Natural hazard events</div>
+                    <div class="detail"><strong>Member Countries:</strong> National scheme (residential properties)</div>
+                    <div class="detail"><strong>Example Payout:</strong> NZ$10.5B after Christchurch earthquakes (2010-11)</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>FSEC (Morocco Solidarity Fund against Catastrophic Events)</h3>
+                    <div class="location">Morocco - Rabat</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquake, flood, and other natural catastrophes</div>
+                    <div class="detail"><strong>Member Countries:</strong> National residential property scheme</div>
+                    <div class="detail"><strong>Example Payout:</strong> First parametric cover signed in 2020, payout in 2023</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>COAST (Climate Adaptation and Resilience for Small-scale Fishers)</h3>
+                    <div class="location">Caribbean - Grenada</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Weather shocks affecting fisheries</div>
+                    <div class="detail"><strong>Member Countries:</strong> Small-scale fishers in Caribbean</div>
+                    <div class="detail"><strong>Example Payout:</strong> Rapid parametric payouts</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>JER (Japan Earthquake Reinsurance Company)</h3>
+                    <div class="location">Japan - Tokyo</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquakes</div>
+                    <div class="detail"><strong>Member Countries:</strong> Japanese insurance market</div>
+                    <div class="detail"><strong>Example Payout:</strong> Government-backed reinsurance</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>KEP (Korean Earthquake Pool)</h3>
+                    <div class="location">South Korea - Seoul</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Earthquakes</div>
+                    <div class="detail"><strong>Member Countries:</strong> Korean property owners</div>
+                    <div class="detail"><strong>Example Payout:</strong> Basic earthquake coverage</div>
+                </div>
+
+                <div class="risk-pool-card">
+                    <h3>NFIP (National Flood Insurance Program)</h3>
+                    <div class="location">USA - Washington D.C.</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Flood</div>
+                    <div class="detail"><strong>Member Countries:</strong> Participating US communities</div>
+                    <div class="detail"><strong>Example Payout:</strong> Over 5 million active policies</div>
+                </div>
+
+                <!-- Agricultural Risk Pools -->
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>AIC (Agriculture Insurance Company of India)</h3>
+                    <div class="location">India - Delhi</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Crop risks, weather perils</div>
+                    <div class="detail"><strong>Member Countries:</strong> Millions of Indian farmers</div>
+                    <div class="detail"><strong>Example Payout:</strong> National crop insurance schemes</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>KAIP (Kenya Agriculture Insurance Pool)</h3>
+                    <div class="location">Kenya - Nairobi</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Livestock and crop risks</div>
+                    <div class="detail"><strong>Member Countries:</strong> Kenyan farmers and livestock owners</div>
+                    <div class="detail"><strong>Example Payout:</strong> Joint reinsurance coverage</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>Agroasemex (Agroaseguradoras de Mexico)</h3>
+                    <div class="location">Mexico - Mexico City</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Agricultural risks, disasters</div>
+                    <div class="detail"><strong>Member Countries:</strong> Mexican smallholder farmers</div>
+                    <div class="detail"><strong>Example Payout:</strong> Crop insurance and disaster relief</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>PCIC (Philippine Crop Insurance Corporation)</h3>
+                    <div class="location">Philippines - Manila</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Crop risks, natural disasters</div>
+                    <div class="detail"><strong>Member Countries:</strong> Filipino rice, corn, and crop farmers</div>
+                    <div class="detail"><strong>Example Payout:</strong> Government-run crop insurance</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>R4 (Rural Resilience Initiative)</h3>
+                    <div class="location">Ethiopia - Near Addis Ababa</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Weather risks, food insecurity</div>
+                    <div class="detail"><strong>Member Countries:</strong> Food-insecure farmers in Ethiopia and other countries</div>
+                    <div class="detail"><strong>Example Payout:</strong> Index insurance and risk reduction services</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>KAIP-2 (Kenya Agricultural Insurance Programme)</h3>
+                    <div class="location">Kenya - Nairobi</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Crop and livestock risks</div>
+                    <div class="detail"><strong>Member Countries:</strong> Kenyan farmers with government and donor support</div>
+                    <div class="detail"><strong>Example Payout:</strong> Index-based insurance with shared risk</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>CLIS (Pakistan Crop Loan Insurance Scheme)</h3>
+                    <div class="location">Pakistan - Islamabad</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Flood, drought, pest-related crop loss</div>
+                    <div class="detail"><strong>Member Countries:</strong> Pakistani farmers with agricultural loans</div>
+                    <div class="detail"><strong>Example Payout:</strong> Government-mandated loan protection</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>Agroseguro</h3>
+                    <div class="location">Spain - Madrid</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Wide range of agricultural perils</div>
+                    <div class="detail"><strong>Member Countries:</strong> Spanish farmers</div>
+                    <div class="detail"><strong>Example Payout:</strong> Public-private agricultural insurance</div>
+                </div>
+
+                <div class="risk-pool-card" style="border-left: 4px solid #27ae60;">
+                    <h3>FPCI (Federal-Provincial Crop Insurance)</h3>
+                    <div class="location">Canada - Ottawa</div>
+                    <div class="detail"><strong>Covered Perils:</strong> Weather risks for grain and oilseeds</div>
+                    <div class="detail"><strong>Member Countries:</strong> Canadian grain and oilseed farmers</div>
+                    <div class="detail"><strong>Example Payout:</strong> Federal-provincial cost-sharing coverage</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Data visualization of global sovereign disaster risk pools for educational purposes</p>
+    </footer>
+
+    <!-- Leaflet JavaScript from CDN -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+        // Initialize the map centered on the world
+        const map = L.map('map').setView([20, 0], 2);
+
+        // Add OpenStreetMap tile layer (free and no API key required)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18,
+        }).addTo(map);
+
+        // Define risk pool data with coordinates and detailed information
+        const riskPools = [
+            {
+                name: 'ARC',
+                fullName: 'African Risk Capacity',
+                lat: -1.2921,
+                lng: 36.8219,
+                location: 'Nairobi, Kenya',
+                perils: 'Drought, floods, cyclones',
+                members: '40+ African Union member states',
+                examplePayout: '$26.3 million to Malawi (2016 drought)',
+                description: 'Specialized agency of the African Union providing disaster risk management and insurance services.',
+                color: '#e74c3c'
+            },
+            {
+                name: 'CCRIF',
+                fullName: 'Caribbean Catastrophe Risk Insurance Facility',
+                lat: 18.2208,
+                lng: -66.5901,
+                location: 'Cayman Islands',
+                perils: 'Hurricanes, earthquakes, excess rainfall',
+                members: '23 Caribbean and Central American countries',
+                examplePayout: '$15.6 million to Dominica (Hurricane Maria 2017)',
+                description: 'World first multi-country risk pool, providing parametric insurance coverage.',
+                color: '#3498db'
+            },
+            {
+                name: 'PCRIC',
+                fullName: 'Pacific Catastrophe Risk Insurance Company',
+                lat: -17.7134,
+                lng: 178.0650,
+                location: 'Suva, Fiji',
+                perils: 'Earthquakes, tsunamis, cyclones',
+                members: '15+ Pacific Island nations',
+                examplePayout: '$3.5 million to Tonga (Cyclone Gita 2018)',
+                description: 'Provides catastrophe risk insurance to Pacific Island countries through innovative financial instruments.',
+                color: '#2ecc71'
+            },
+            {
+                name: 'PAID',
+                fullName: 'Pool of Insurance Against Natural Disasters in Dwellings',
+                lat: 44.4268,
+                lng: 26.1025,
+                location: 'Bucharest, Romania',
+                perils: 'Earthquakes, floods, landslides',
+                members: 'Romanian homeowners (mandatory coverage)',
+                examplePayout: 'Covers residential properties nationwide',
+                description: 'Romania catastrophe insurance pool. Covers earthquakes, floods, and landslides. Mandatory for homeowners.',
+                color: '#9b59b6'
+            },
+            {
+                name: 'TCIP',
+                fullName: 'Turkish Catastrophe Insurance Pool',
+                lat: 39.9208,
+                lng: 32.8541,
+                location: 'Ankara, Turkey',
+                perils: 'Earthquakes',
+                members: 'Turkish residential buildings',
+                examplePayout: 'Payouts after major earthquakes',
+                description: 'Turkey earthquake insurance pool. Covers residential buildings. Payouts after major earthquakes.',
+                color: '#f39c12'
+            },
+            {
+                name: 'CCS',
+                fullName: 'Consorcio de Compensacion de Seguros',
+                lat: 40.4168,
+                lng: -3.7038,
+                location: 'Madrid, Spain',
+                perils: 'Natural disasters, extraordinary risks',
+                members: 'Spanish insurance market',
+                examplePayout: 'Comprehensive disaster coverage',
+                description: 'Public insurance compensation system. Covers natural disasters and extraordinary risks.',
+                color: '#e67e22'
+            },
+            {
+                name: 'CCR',
+                fullName: 'Caisse Centrale de Reassurance',
+                lat: 48.8566,
+                lng: 2.3522,
+                location: 'Paris, France',
+                perils: 'Natural disasters via nat cat scheme',
+                members: 'French insurance market',
+                examplePayout: 'State-guaranteed reinsurance',
+                description: 'Public reinsurer with state guarantee. Covers natural disasters via nat cat scheme.',
+                color: '#34495e'
+            },
+            {
+                name: 'SEADRIF',
+                fullName: 'Southeast Asia Disaster Risk Insurance Facility',
+                lat: 1.3521,
+                lng: 103.8198,
+                location: 'Singapore',
+                perils: 'Floods, natural disasters',
+                members: 'Southeast Asian countries (Laos, Myanmar)',
+                examplePayout: 'World Bank-backed facility',
+                description: 'Disaster risk finance facility for Southeast Asia. Provides flood insurance to countries like Laos and Myanmar. Backed by the World Bank.',
+                color: '#1abc9c'
+            },
+            {
+                name: 'NAT',
+                fullName: 'Norway Natural Perils Pool',
+                lat: 59.9139,
+                lng: 10.7522,
+                location: 'Oslo',
+                perils: 'Floods, natural disasters',
+                members: 'All property insurers in Norway (mandatory pool)',
+                examplePayout: 'Funded via property premiums; state-backed excess coverage',
+                description: 'Mandatory public-private pool covering natural perils (flood, storm, landslide, earthquake) included in every property policy. Risk is shared among insurers and backed by the government.',
+                color: '#8ecae6'
+            },
+            {
+                name: 'NTI',
+                fullName: 'Iceland Natural Catastrophe Insurance',
+                lat: 64.1265,
+                lng: -21.8174,
+                location: 'Reykjavik',
+                perils: 'Floods, natural disasters',
+                members: 'All residential property owners (compulsory national scheme)',
+                examplePayout: 'Funded via property premiums; state-backed excess coverage',
+                description: 'State-run mandatory catastrophe insurer covering volcanic eruptions, earthquakes, avalanches, and floods. Funded by a property levy and managed by the Iceland Catastrophe Insurance organization.',
+                color: '#6a4c93'
+            },
+            {
+                name: 'Toka Tu Ake',
+                fullName: 'New Zealand Natural Hazards Commission',
+                lat: -41.2865,
+                lng: 174.7762,
+                location: 'Wellington',
+                perils: 'Natural hazard events',
+                members: 'National scheme (residential properties)',
+                examplePayout: 'NZ$10.5B after Christchurch earthquakes (2010-11)',
+                description: 'New Zealand national disaster insurance pool for residential properties, funded by levies and backed by global reinsurance. Covers earthquakes, tsunamis, volcanoes, and landslides. Operates as a statutory monopoly since 1945.',
+                color: '#ffb703'
+            },
+            {
+                name: 'FSEC',
+                fullName: 'Morocco Solidarity Fund against Catastrophic Events',
+                lat: 33.9716,
+                lng: -6.8498,
+                location: 'Rabat, Morocco',
+                perils: 'Earthquake, flood, and other natural catastrophes',
+                members: 'National residential property scheme',
+                examplePayout: 'First parametric cover signed in 2020, payout in 2023',
+                description: 'State-backed fund that compensates victims of natural disasters who lack formal insurance. It operates in parallel with private insurance markets and pools risk nationally.',
+                color: '#ff006e'
+            },
+            {
+                name: 'COAST',
+                fullName: 'Climate Adaptation and Resilience for Small-scale Fishers',
+                lat: 12.1165,
+                lng: -61.6790,
+                location: 'Grenada',
+                perils: 'Weather shocks affecting fisheries',
+                members: 'Small-scale fishers in Caribbean',
+                examplePayout: 'Rapid parametric payouts',
+                description: 'Parametric insurance for small-scale fishers. Linked to CCRIF, provides rapid payouts after weather shocks.',
+                color: '#16a085'
+            },
+            {
+                name: 'JER',
+                fullName: 'Japan Earthquake Reinsurance Company',
+                lat: 35.6895,
+                lng: 139.6917,
+                location: 'Tokyo, Japan',
+                perils: 'Earthquakes',
+                members: 'Japanese insurance market',
+                examplePayout: 'Government-backed reinsurance',
+                description: 'Japan earthquake insurance system. Government provides reinsurance to private insurers. Managed via the Japan Earthquake Reinsurance Company.',
+                color: '#8e44ad'
+            },
+            {
+                name: 'KEP',
+                fullName: 'Korean Earthquake Pool',
+                lat: 37.5665,
+                lng: 126.9780,
+                location: 'Seoul, South Korea',
+                perils: 'Earthquakes',
+                members: 'Korean property owners',
+                examplePayout: 'Basic earthquake coverage',
+                description: 'National scheme offering basic earthquake coverage. Small but expanding. Backed by government and private insurers.',
+                color: '#d35400'
+            },
+            {
+                name: 'NFIP',
+                fullName: 'National Flood Insurance Program',
+                lat: 38.9072,
+                lng: -77.0369,
+                location: 'Washington D.C., USA',
+                perils: 'Flood',
+                members: 'Participating US communities',
+                examplePayout: 'Over 5 million active policies',
+                description: 'National Flood Insurance Program. Public insurance system managed by FEMA. Covers flood risk for residential and commercial properties in over 22,000 communities. Funded through premiums and federally backed. Centralized risk pool.',
+                color: '#66dbc9'
+            },
+            {
+                name: 'AIC',
+                fullName: 'Agriculture Insurance Company of India',
+                lat: 28.6139,
+                lng: 77.2090,
+                location: 'Delhi, India',
+                perils: 'Crop risks, weather perils',
+                members: 'Millions of Indian farmers',
+                examplePayout: 'National crop insurance schemes',
+                description: 'Agriculture Insurance Company of India. Manages national crop insurance schemes for millions of farmers. Public-private reinsurance pool.',
+                color: '#27ae60',
+                type: 'agricultural'
+            },
+            {
+                name: 'KAIP',
+                fullName: 'Kenya Agriculture Insurance Pool',
+                lat: -1.2921,
+                lng: 36.8219,
+                location: 'Nairobi, Kenya',
+                perils: 'Livestock and crop risks',
+                members: 'Kenyan farmers and livestock owners',
+                examplePayout: 'Joint reinsurance coverage',
+                description: 'Kenya Agriculture Insurance Pool. Local insurers pool risk and reinsure jointly. Focus on livestock and crops.',
+                color: '#f39c12',
+                type: 'agricultural'
+            },
+            {
+                name: 'Agroasemex',
+                fullName: 'Agroaseguradoras de Mexico',
+                lat: 19.4326,
+                lng: -99.1332,
+                location: 'Mexico City, Mexico',
+                perils: 'Agricultural risks, disasters',
+                members: 'Mexican smallholder farmers',
+                examplePayout: 'Crop insurance and disaster relief',
+                description: 'State-owned reinsurer for agriculture. Supports crop insurance for smallholder farmers. Linked to disaster relief schemes.',
+                color: '#e74c3c',
+                type: 'agricultural'
+            },
+            {
+                name: 'PCIC',
+                fullName: 'Philippine Crop Insurance Corporation',
+                lat: 14.5995,
+                lng: 120.9842,
+                location: 'Manila, Philippines',
+                perils: 'Crop risks, natural disasters',
+                members: 'Filipino rice, corn, and crop farmers',
+                examplePayout: 'Government-run crop insurance',
+                description: 'Philippine Crop Insurance Corporation. Government-run crop insurance. Covers rice, corn, and high-value crops.',
+                color: '#9b59b6',
+                type: 'agricultural'
+            },
+            {
+                name: 'R4',
+                fullName: 'Rural Resilience Initiative',
+                lat: 9.03,
+                lng: 38.74,
+                location: 'Near Addis Ababa, Ethiopia',
+                perils: 'Weather risks, food insecurity',
+                members: 'Food-insecure farmers in Ethiopia and other countries',
+                examplePayout: 'Index insurance and risk reduction services',
+                description: 'Rural Resilience Initiative by WFP & Oxfam. Offers index insurance, savings, and risk reduction for food-insecure farmers in Ethiopia and other countries.',
+                color: '#2c3e50',
+                type: 'agricultural'
+            },
+            {
+                name: 'KAIP-2',
+                fullName: 'Kenya Agricultural Insurance Programme',
+                lat: -1.2421,
+                lng: 36.8719,
+                location: 'Nairobi, Kenya',
+                perils: 'Crop and livestock risks',
+                members: 'Kenyan farmers with government and donor support',
+                examplePayout: 'Index-based insurance with shared risk',
+                description: 'Kenya index-based crop and livestock insurance pool. Risk is shared across insurers and reinsured. Government-supported with strong donor involvement.',
+                color: '#e67e22',
+                type: 'agricultural'
+            },
+            {
+                name: 'CLIS',
+                fullName: 'Pakistan Crop Loan Insurance Scheme',
+                lat: 33.6844,
+                lng: 73.0479,
+                location: 'Islamabad, Pakistan',
+                perils: 'Flood, drought, pest-related crop loss',
+                members: 'Pakistani farmers with agricultural loans',
+                examplePayout: 'Government-mandated loan protection',
+                description: 'Government-mandated insurance scheme covering farmers who take agricultural loans. Offers protection against flood, drought, and pest-related crop loss.',
+                color: '#16a085',
+                type: 'agricultural'
+            },
+            {
+                name: 'Agroseguro',
+                fullName: 'Agroseguro',
+                lat: 40.4168,
+                lng: -3.7038,
+                location: 'Madrid, Spain',
+                perils: 'Wide range of agricultural perils',
+                members: 'Spanish farmers',
+                examplePayout: 'Public-private agricultural insurance',
+                description: 'Spain public-private agricultural insurance pool. Operated by Agroseguro, with reinsurance from the state-backed CCS. Covers a wide range of perils and is widely adopted by Spanish farmers.',
+                color: '#8e44ad',
+                type: 'agricultural'
+            },
+            {
+                name: 'FPCI',
+                fullName: 'Federal-Provincial Crop Insurance',
+                lat: 45.4215,
+                lng: -75.6972,
+                location: 'Ottawa, Canada',
+                perils: 'Weather risks for grain and oilseeds',
+                members: 'Canadian grain and oilseed farmers',
+                examplePayout: 'Federal-provincial cost-sharing coverage',
+                description: 'Long-standing federal provincial crop insurance covering grain and oilseeds with cost-sharing across jurisdictions.',
+                color: '#d35400',
+                type: 'agricultural'
+            }
+        ];
+
+        // Function to create custom marker icon
+        function createCustomIcon(color, type = 'disaster') {
+            const isAgricultural = type === 'agricultural';
+            const borderRadius = isAgricultural ? '15%' : '50%';
+            const size = isAgricultural ? 18 : 20;
+            
+            return L.divIcon({
+                html: `<div style="
+                    background-color: ${color};
+                    width: ${size}px;
+                    height: ${size}px;
+                    border-radius: ${borderRadius};
+                    border: 3px solid white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    ${isAgricultural ? 'transform: rotate(45deg);' : ''}
+                "></div>`,
+                className: 'custom-marker',
+                iconSize: [size, size],
+                iconAnchor: [size/2, size/2]
+            });
+        }
+
+        // Function to create popup content
+        function createPopupContent(pool) {
+            return `
+                <div>
+                    <div class="popup-title">${pool.fullName} (${pool.name})</div>
+                    <div class="popup-detail"><strong>Location:</strong> ${pool.location}</div>
+                    <div class="popup-detail"><strong>Covered Perils:</strong> ${pool.perils}</div>
+                    <div class="popup-detail"><strong>Member Countries:</strong> ${pool.members}</div>
+                    <div class="popup-detail"><strong>Example Payout:</strong> ${pool.examplePayout}</div>
+                    <div class="popup-detail" style="margin-top: 0.5rem; font-style: italic;">${pool.description}</div>
+                </div>
+            `;
+        }
+
+        // Add markers for each risk pool
+        riskPools.forEach(pool => {
+            // Create marker with custom icon
+            const marker = L.marker([pool.lat, pool.lng], {
+                icon: createCustomIcon(pool.color, pool.type)
+            }).addTo(map);
+
+            // Add popup with detailed information
+            marker.bindPopup(createPopupContent(pool), {
+                maxWidth: 300,
+                className: 'custom-popup'
+            });
+
+            // Add click event for better user experience
+            marker.on('click', function(e) {
+                // Center map on clicked marker
+                map.setView([pool.lat, pool.lng], Math.max(map.getZoom(), 5));
+            });
+        });
+
+        // Add scale control
+        L.control.scale().addTo(map);
+
+        // Responsive map handling
+        function handleResize() {
+            // Invalidate map size when window is resized
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
+
+        // Add event listener for window resize
+        window.addEventListener('resize', handleResize);
+
+        // Add custom control for disaster risk pools legend
+        const disasterLegend = L.control({position: 'bottomleft'});
+
+        disasterLegend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.style.cssText = `
+                background: white;
+                padding: 12px;
+                border-radius: 8px;
+                box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+                font-size: 11px;
+                line-height: 1.3;
+                max-height: 300px;
+                overflow-y: auto;
+                min-width: 180px;
+                margin-bottom: 10px;
+            `;
+            
+            div.innerHTML = `
+                <strong style="color: #333; font-size: 12px;">Property & Disaster Risk Pools</strong><br>
+                <span style="color: #e74c3c;">●</span> ARC (Africa)<br>
+                <span style="color: #3498db;">●</span> CCRIF (Caribbean)<br>
+                <span style="color: #2ecc71;">●</span> PCRIC (Pacific)<br>
+                <span style="color: #9b59b6;">●</span> PAID (Romania)<br>
+                <span style="color: #f39c12;">●</span> TCIP (Turkey)<br>
+                <span style="color: #e67e22;">●</span> CCS (Spain)<br>
+                <span style="color: #34495e;">●</span> CCR (France)<br>
+                <span style="color: #1abc9c;">●</span> SEADRIF (SE Asia)<br>
+                <span style="color: #8ecae6;">●</span> NAT (Norway)<br>
+                <span style="color: #6a4c93;">●</span> NTI (Iceland)<br>
+                <span style="color: #ffb703;">●</span> Toka Tu Ake (NZ)<br>
+                <span style="color: #ff006e;">●</span> FSEC (Morocco)<br>
+                <span style="color: #16a085;">●</span> COAST (Caribbean)<br>
+                <span style="color: #8e44ad;">●</span> JER (Japan)<br>
+                <span style="color: #d35400;">●</span> KEP (Korea)<br>
+                <span style="color: #66dbc9;">●</span> NFIP (USA)
+            `;
+            
+            return div;
+        };
+
+        // Add custom control for agricultural risk pools legend
+        const agriLegend = L.control({position: 'bottomleft'});
+
+        agriLegend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.style.cssText = `
+                background: white;
+                padding: 12px;
+                border-radius: 8px;
+                box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+                font-size: 11px;
+                line-height: 1.3;
+                max-height: 200px;
+                overflow-y: auto;
+                min-width: 180px;
+            `;
+            
+            div.innerHTML = `
+                <strong style="color: #333; font-size: 12px;">Agricultural Risk Pools</strong><br>
+                <span style="color: #27ae60;">◆</span> AIC (India)<br>
+                <span style="color: #f39c12;">◆</span> KAIP (Kenya)<br>
+                <span style="color: #e74c3c;">◆</span> Agroasemex (Mexico)<br>
+                <span style="color: #9b59b6;">◆</span> PCIC (Philippines)<br>
+                <span style="color: #2c3e50;">◆</span> R4 (Ethiopia)<br>
+                <span style="color: #e67e22;">◆</span> KAIP-2 (Kenya)<br>
+                <span style="color: #16a085;">◆</span> CLIS (Pakistan)<br>
+                <span style="color: #8e44ad;">◆</span> Agroseguro (Spain)<br>
+                <span style="color: #d35400;">◆</span> FPCI (Canada)
+            `;
+            
+            return div;
+        };
+
+        disasterLegend.addTo(map);
+        agriLegend.addTo(map);
+
+        const legends = document.querySelectorAll('.legend');
+        map.on('popupopen',  () => legends.forEach(d => d.style.display = 'none'));
+        map.on('popupclose', () => legends.forEach(d => d.style.display = ''));
+
+        // Ensure map renders properly
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
+        // Console log for debugging (can be removed in production)
+        console.log('Global Sovereign Risk Pools map initialized successfully');
+        console.log('Risk pools loaded:', riskPools.length);
+    </script>
+</body>
+</html>
